@@ -1,0 +1,2 @@
+defmodule OpenPublishing do
+end
