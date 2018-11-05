@@ -32,6 +32,7 @@ defmodule OpEx.MixProject do
       {:dialyxir, "~> 1.0.0-rc.3", only: [:dev], runtime: false},
       {:credo, "~> 0.10.2", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.10", only: :test},
+      {:inch_ex, github: "rrrene/inch_ex", only: [:dev, :test]},
       {:bypass, "~> 0.9", only: :test},
       {:distillery, "~> 2.0", runtime: false},
       {:httpoison, "~> 1.4"},

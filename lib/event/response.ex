@@ -1,4 +1,8 @@
 defmodule OpenPublishing.Event.Response do
+  @moduledoc """
+  Struct for storing event fetching response
+  """
+
   defstruct request: nil,
             next_request: nil,
             items: [],
