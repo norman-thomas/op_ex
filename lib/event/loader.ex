@@ -34,7 +34,7 @@ defmodule OpenPublishing.Event.Loader do
       |> Resource.add_fields(aspects)
 
     Logger.debug("Loader: requesting #{Resource.uri(resources)}")
-    objects = ResourceHelper.load(ctx, resources)
+    {:ok, objects} = ResourceHelper.load(ctx, resources)
 
     {:noreply, objects, state}
   end

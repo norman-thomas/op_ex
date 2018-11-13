@@ -17,11 +17,12 @@ defmodule OpenPublishing.Event.Request do
   @type context_t :: OpenPublishing.Context.t()
   @type method_t :: OpenPublishing.Event.method_t()
   @type filter_t :: OpenPublishing.Event.Filter.t()
+  @type filters_t :: list(filter_t)
 
   @type t :: %__MODULE__{
           ctx: context_t() | nil,
           method: method_t(),
-          filters: filter_t(),
+          filters: filters_t(),
           from: integer(),
           resumption_token: String.t() | nil
         }
@@ -51,7 +52,7 @@ defmodule OpenPublishing.Event.Request do
           resumption_token: nil
         }
   """
-  @spec new(context_t(), method_t(), filter_t(), integer) :: t()
+  @spec new(context_t(), method_t(), filters_t(), non_neg_integer()) :: t()
   def new(%Context{} = ctx, method, filters, from_ \\ 0)
       when is_list(filters) do
     %__MODULE__{

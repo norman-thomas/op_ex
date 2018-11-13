@@ -11,7 +11,7 @@ defmodule OpenPublishing.Resource.Implementation do
 
   @type context :: OpenPublishing.Context.t()
   @type ids_t :: Resource.Descriptor.ids_t()
-  @type fieldname_t :: Resource.fieldname_t()
+  @type fieldname_t :: Resource.Descriptor.fieldname_t()
 
   @callback load(context, ids_t(), list(fieldname_t())) :: Helper.response_t()
 

@@ -35,7 +35,7 @@ defmodule OpenPublishing.Event do
           last_modified: integer()
         }
 
-  @spec list_status(OpenPublishing.Context.t(), list(tuple), integer()) :: EventResponse.t()
+  @spec list_status(OpenPublishing.Context.t(), list(filter_t), integer()) :: EventResponse.t()
   def list_status(%OpenPublishing.Context{} = ctx, filters, from \\ 0) do
     ctx
     |> EventRequest.new(:list_status, filters, from)
