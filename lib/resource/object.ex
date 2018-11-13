@@ -61,4 +61,12 @@ defmodule OpenPublishing.Object do
       field :account
     end
   end
+
+  object OrderFulfillment do
+    aspect "*" do
+      field :status
+      field :shippings
+      field :external_supplier_references
+    end
+  end
 end

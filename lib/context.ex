@@ -45,10 +45,15 @@ defmodule OpenPublishing.Context do
         }
   """
   @spec new(String.t(), keyword()) :: t()
-  def new(host \\ @host, auth_param) do
+  def new(host \\ @host, auth_param) when is_list(auth_param) do
     %__MODULE__{
       host: host,
       auth: OpenPublishing.Auth.Context.new(auth_param)
     }
+  end
+
+  @spec auth(t()) :: t()
+  def auth(%__MODULE__{} = ctx) do
+    OpenPublishing.Auth.auth(ctx)
   end
 end

@@ -16,7 +16,7 @@ defmodule OpenPublishing.Event.Request do
 
   @type context_t :: OpenPublishing.Context.t()
   @type method_t :: OpenPublishing.Event.method_t()
-  @type filter_t :: list(tuple())
+  @type filter_t :: OpenPublishing.Event.Filter.t()
 
   @type t :: %__MODULE__{
           ctx: context_t() | nil,
@@ -108,16 +108,9 @@ defmodule OpenPublishing.Event.Request do
   defp from(%DateTime{} = val), do: val
   defp from(_), do: 0
 
-  def document_metadata_changed, do: ["document", "changed", "metadata"]
-  def account_changed, do: ["account", "changed", ""]
-
   defp event_types(filters) do
     filters
-    |> Enum.map(fn filter ->
-      filter
-      |> Enum.join(",")
-      |> (fn item -> "(#{item})" end).()
-    end)
+    |> Enum.map(&to_string/1)
     |> Enum.join(";")
   end
 end

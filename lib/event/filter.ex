@@ -8,16 +8,20 @@ defmodule OpenPublishing.Event.Filter do
   @enforce_keys @fields
   defstruct @fields
 
+  @type target_t :: :document | :order | :account
+  @type action_t :: :changed | :"fulfillment-changed"
+  @type type_t :: :metadata | :accounting
+  
   @type t :: %__MODULE__{
-          target: String.t() | atom | nil,
-          action: String.t() | atom | nil,
-          type: String.t() | atom | nil
+          target: String.t() | target_t | nil,
+          action: String.t() | action_t | nil,
+          type: String.t() | type_t | nil
         }
 
   @doc """
   Create event filter from tuple
   """
-  @spec new({String.t(), String.t(), String.t()} | {atom, atom, atom}) :: t()
+  @spec new({String.t(), String.t(), String.t()} | {target_t, action_t, type_t}) :: t()
   def new({target, action, type}) do
     %__MODULE__{
       target: target,
@@ -39,5 +43,15 @@ defmodule OpenPublishing.Event.Filter do
       |> Enum.join(",")
 
     "(#{joined})"
+  end
+
+  def document_metadata_changed(), do: new({"document", "changed", "metadata"})
+  def order_fulfillment(), do: new({"order", "fulfillment-changed", "accounting"})
+  def account_changed(), do: new({"account", "changed", ""})
+
+  defimpl String.Chars do
+    def to_string(f) do
+      OpenPublishing.Event.Filter.to_url_param(f)
+    end
   end
 end

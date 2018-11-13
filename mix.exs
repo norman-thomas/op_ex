@@ -39,7 +39,8 @@ defmodule OpEx.MixProject do
       {:poison, "~> 3.1"},
       {:timex, "~> 3.4"},
       {:ok, "~> 2.0"},
-      {:gen_stage, "~> 0.14"}
+      {:gen_stage, "~> 0.14"},
+      {:elastix, git: "https://github.com/werbitzky/elastix.git", branch: "master"}
     ]
   end
 end

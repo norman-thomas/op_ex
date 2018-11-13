@@ -12,23 +12,26 @@ defmodule OpenPublishing.Event do
   alias OpenPublishing.Event.Response, as: EventResponse
 
   defstruct realm_id: 0,
+            method: :list_status,
             target: "",
             action: "",
-            method: :list_status,
+            type: "",
             source_type: "",
             reference_id: 0,
             app_id: 0,
             last_modified: 0
 
   @type method_t :: :list_status | :history
+  @type filter_t :: OpenPublishing.Event.Filter.t()
   @type t :: %__MODULE__{
-          realm_id: integer,
+          method: method_t(),
+          realm_id: non_neg_integer(),
           target: String.t(),
           action: String.t(),
-          method: method_t(),
+          type: String.t(),
           source_type: String.t(),
           reference_id: integer(),
-          app_id: integer(),
+          app_id: integer() | nil,
           last_modified: integer()
         }
 
@@ -40,7 +43,7 @@ defmodule OpenPublishing.Event do
   end
 
   @spec request(EventRequest.t()) :: EventResponse.t()
-  defp request(req) do
+  def request(req) do
     {:ok, %{"result" => response}} =
       req
       |> EventRequest.request()
@@ -53,10 +56,10 @@ defmodule OpenPublishing.Event do
     next_request = get_next_request(req, response)
 
     %EventResponse{
-      request: req,
+      prev_request: req,
       next_request: next_request,
-      items: items,
-      execution_timestamp: execution_timestamp
+      execution_timestamp: execution_timestamp,
+      items: items
     }
   end
 
