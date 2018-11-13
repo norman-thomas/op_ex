@@ -20,8 +20,8 @@ defmodule OpenPublishing.Resource.Helper do
       ~>> Request.parse_json()
 
     case from_gjp(response) do
-      {:ok, %{guids: guids, objects: objects}} -> build_tree(guids, objects)
-      {:error, reason} -> {:error, reason}
+      {:ok, %{guids: guids, objects: objects}} -> {:ok, build_tree(guids, objects)}
+      err -> err
     end
   end
 
