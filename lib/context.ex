@@ -3,7 +3,7 @@ defmodule OpenPublishing.Context do
   Module which defines a struct to hold the context, i.e. host and authentication parameters
   """
 
-  @host "api2.openpublishing.com"
+  @host "api.openpublishing.com"
   defstruct host: @host,
             auth: %OpenPublishing.Auth.Context{},
             verify_ssl: true
@@ -28,7 +28,7 @@ defmodule OpenPublishing.Context do
             realm_id: nil,
             user_id: nil
           },
-          host: "api2.openpublishing.com",
+          host: "api.openpublishing.com",
           verify_ssl: true
         }
         iex> OpenPublishing.Context.new(auth_token: "secrettoken")
@@ -40,7 +40,7 @@ defmodule OpenPublishing.Context do
             realm_id: nil,
             user_id: nil
           },
-          host: "api2.openpublishing.com",
+          host: "api.openpublishing.com",
           verify_ssl: true
         }
   """

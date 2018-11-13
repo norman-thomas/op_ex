@@ -27,11 +27,14 @@ defmodule OpenPublishing.Event.Loader do
     Logger.debug("Loader.handle_events:")
     Logger.debug(inspect(events))
 
-    objects =
+    resources =
       events
-      #|> Enum.map(fn e -> Resource.new(String.downcase(e.source_type), e.reference_id) end)
-      #|> Enum.map(fn r -> Resource.add_fields(r, aspects) end)
-      #|> Enum.map(fn r -> ResourceHelper.load(ctx, r) end)
+      |> Enum.map(fn e -> Resource.new(String.downcase(e.source_type), e.reference_id) end)
+      |> Resource.concat()
+      |> Resource.add_fields(aspects)
+
+    Logger.debug("Loader: requesting #{Resource.uri(resources)}")
+    objects = ResourceHelper.load(ctx, resources)
 
     {:noreply, objects, state}
   end

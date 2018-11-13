@@ -4,19 +4,12 @@ defmodule OpenPublishing.Resource do
   and successively adding fields to the request.
   """
 
-  @ensurefields [:classname]
-  defstruct classname: nil,
-            id: nil,
-            fields: []
+  alias OpenPublishing.Resource.Descriptor
 
-  @type classname_t :: String.t()
-  @type fieldname_t :: String.t()
-  @type id_t :: pos_integer | nil
-  @type ids_t :: id_t() | list(pos_integer)
+  defstruct resources: []
+
   @type t :: %__MODULE__{
-          classname: classname_t() | nil,
-          id: ids_t,
-          fields: [fieldname_t()]
+          resources: [Descriptor.t()]
         }
 
   @path "/resource/v2/"
@@ -33,9 +26,24 @@ defmodule OpenPublishing.Resource do
         fields: []
       }
   """
-  @spec new(classname_t(), ids_t()) :: t()
-  def new(classname, id) do
-    %__MODULE__{classname: classname, id: id}
+  @spec new(Descriptor.classname_t(), Descriptor.ids_t()) :: t()
+  def new(classname, id) when is_integer(id) do
+    %__MODULE__{resources: [%Descriptor{classname: classname, id: id}]}
+  end
+
+  def new(classname, ids) when is_list(ids) do
+    resources = for id <- ids, do: new(classname, id)
+
+    %__MODULE__{resources: resources}
+  end
+
+  def concat(resources) when is_list(resources) do
+    rs =
+      resources
+      |> Enum.map(fn %__MODULE__{resources: r} -> r end)
+      |> Enum.concat()
+
+    %__MODULE__{resources: rs}
   end
 
   @doc """
@@ -50,9 +58,9 @@ defmodule OpenPublishing.Resource do
         fields: []
       }
   """
-  @spec search(classname_t()) :: t()
+  @spec search(Descriptor.classname_t()) :: t()
   def search(classname) do
-    %__MODULE__{classname: classname}
+    %__MODULE__{resources: [%Descriptor{classname: classname}]}
   end
 
   @doc """
@@ -63,28 +71,28 @@ defmodule OpenPublishing.Resource do
       iex> doc = OpenPublishing.Resource.new("document", 1387)
       iex> OpenPublishing.Resource.add_fields(doc, ["title", "authors"])
       %OpenPublishing.Resource{
-        classname: "document",
-        id: 1387,
-        fields: ["title", "authors"]
+        resources: %OpenPublishing.Resource.Descriptor{
+          classname: "document",
+          id: 1387,
+          fields: ["title", "authors"]
+        }
       }
   """
-  @spec add_fields(t(), list(fieldname_t())) :: t()
-  def add_fields(%__MODULE__{fields: existing_fields} = request, fields) when is_list(fields) do
-    new_fields =
-      existing_fields
-      |> Enum.concat(fields)
-      |> Enum.uniq()
+  @spec add_fields(t(), list(Descriptor.fieldname_t())) :: t()
+  def add_fields(%__MODULE__{resources: resources}, fields) when is_list(fields) do
+    updated_resources = for r <- resources, do: Descriptor.add_fields(r, fields)
 
-    %__MODULE__{request | fields: new_fields}
+    %__MODULE__{resources: updated_resources}
   end
 
   @doc """
   Adds a field to the resource request
   """
-  @spec add_field(t(), fieldname_t()) :: t()
-  def add_field(%__MODULE__{fields: fields} = request, field) do
-    new_fields = [field | fields] |> Enum.uniq()
-    %__MODULE__{request | fields: new_fields}
+  @spec add_field(t(), Descriptor.fieldname_t()) :: t()
+  def add_field(%__MODULE__{resources: resources}, field) do
+    updated_resources = for r <- resources, do: Descriptor.add_field(r, field)
+
+    %__MODULE__{resources: updated_resources}
   end
 
   defp prepend_path(g) do
@@ -95,17 +103,9 @@ defmodule OpenPublishing.Resource do
   Builds the URL path for a given resource.
   """
   @spec uri(t()) :: String.t()
-  def uri(%__MODULE__{id: id, fields: fields} = resource) when is_integer(id) do
-    resource
-    |> guid()
-    |> append_fields(fields)
-    |> prepend_path()
-  end
-
-  def uri(%__MODULE__{id: ids, fields: fields} = resource) when is_list(ids) do
-    resource
-    |> guid()
-    |> Enum.map(&append_fields(&1, fields))
+  def uri(%__MODULE__{resources: resources}) do
+    resources
+    |> Enum.map(&Descriptor.uri/1)
     |> Enum.join(",")
     |> prepend_path()
   end
@@ -122,32 +122,7 @@ defmodule OpenPublishing.Resource do
     false
   end
 
-  defp guid(%__MODULE__{classname: classname, id: id}) when is_integer(id) and id >= 0 do
+  def guid(classname, id) when is_binary(classname) and is_integer(id) and id >= 0 do
     "#{classname}.#{to_string(id)}"
-  end
-
-  defp guid(%__MODULE__{id: ids} = resource) when is_list(ids) do
-    ids
-    |> Enum.map(fn id -> guid(%__MODULE__{resource | id: id}) end)
-  end
-
-  defp append_fields(g, fields) do
-    g <> fields_to_string(fields)
-  end
-
-  defp fields_to_string(fields) do
-    cond do
-      nil == fields ->
-        ""
-
-      [] == fields ->
-        ""
-
-      true ->
-        fields
-        |> Enum.map(&to_string/1)
-        |> Enum.join(",")
-        |> (fn s -> "[" <> s <> "]" end).()
-    end
   end
 end

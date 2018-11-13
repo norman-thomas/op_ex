@@ -42,7 +42,7 @@ defmodule OpenPublishing.Event.Request do
               realm_id: nil,
               user_id: nil
             },
-            host: "api2.openpublishing.com",
+            host: "api.openpublishing.com",
             verify_ssl: true
           },
           filters: [["document", "metadata", "changed"]],

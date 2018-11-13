@@ -10,7 +10,7 @@ defmodule OpenPublishing.Resource.Implementation do
   alias OpenPublishing.Resource.Helper
 
   @type context :: OpenPublishing.Context.t()
-  @type ids_t :: Resource.ids_t()
+  @type ids_t :: Resource.Descriptor.ids_t()
   @type fieldname_t :: Resource.fieldname_t()
 
   @callback load(context, ids_t(), list(fieldname_t())) :: Helper.response_t()
@@ -66,6 +66,8 @@ defmodule OpenPublishing.Resource.Implementation do
         @classname unquote(classname)
         defstruct unquote(fieldnames)
 
+        @type ids_t :: OpenPublishing.Resource.Descriptor.ids_t()
+
         unquote(block)
 
         def load(ctx, id, fields \\ [])
@@ -75,19 +77,10 @@ defmodule OpenPublishing.Resource.Implementation do
 
         If `id` is a list, then multiple objects will be loaded
         """
-        def load(%OpenPublishing.Context{} = ctx, id, fields) when is_integer(id) do
+        def load(%OpenPublishing.Context{} = ctx, id, fields) do
           resource =
             unquote(classname)
             |> OpenPublishing.Resource.new(id)
-            |> OpenPublishing.Resource.add_fields(fields)
-
-          Helper.load(ctx, resource)
-        end
-
-        def load(%OpenPublishing.Context{} = ctx, ids, fields) when is_list(ids) do
-          resource =
-            unquote(classname)
-            |> OpenPublishing.Resource.new(ids)
             |> OpenPublishing.Resource.add_fields(fields)
 
           Helper.load(ctx, resource)
@@ -109,9 +102,11 @@ defmodule OpenPublishing.Resource.Implementation do
         @doc """
         Resource path for `#{unquote(classname)}`
         """
-        @spec uri(OpenPublishing.Resource.ids_t()) :: String.t()
+        @spec uri(ids_t()) :: String.t()
         def uri(id) do
-          OpenPublishing.Resource.uri(%OpenPublishing.Resource{classname: unquote(classname), id: id})
+          unquote(classname)
+          |> OpenPublishing.Resource.new(id)
+          |> OpenPublishing.Resource.uri()
         end
       end
 
@@ -150,14 +145,18 @@ defmodule OpenPublishing.Resource.Implementation do
   defmacro field(name, opts) do
     field_name = to_string(name)
     aspect_name = get_aspect_name(opts)
-    accessor = get_accessor(name, opts)
+    # accessor = get_accessor(name, opts)
 
     quote do
       @doc """
       Field `#{unquote(field_name)}`, loaded via aspect `#{unquote(aspect_name)}`
       """
-      def unquote(name)(%OpenPublishing.Resource{classname: @classname} = resource) do
-        OpenPublishing.Resource.add_field(resource, unquote(aspect_name))
+      def unquote(name)(%OpenPublishing.Resource.Descriptor{classname: @classname} = resource) do
+        OpenPublishing.Resource.Descriptor.add_field(resource, unquote(aspect_name))
+      end
+
+      def unquote(name)(%OpenPublishing.Resource{resources: resources}) do
+        OpenPublishing.Resource.add_field(resources, unquote(aspect_name))
       end
 
       def unquote(name)(%__MODULE__{unquote(name) => value} = resource) do
