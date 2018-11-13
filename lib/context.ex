@@ -52,7 +52,7 @@ defmodule OpenPublishing.Context do
     }
   end
 
-  @spec auth(t()) :: t()
+  @spec auth(t()) :: {:ok, t()} | {:error, term()}
   def auth(%__MODULE__{} = ctx) do
     OpenPublishing.Auth.auth(ctx)
   end

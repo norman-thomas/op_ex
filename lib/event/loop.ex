@@ -18,7 +18,7 @@ defmodule OpenPublishing.Event.Loop do
   @delay 15_000
 
   def subscribe(%Context{} = ctx, filters, pid, from \\ 0, infinite \\ true) when is_list(filters) do
-    initial_request = EventRequest.new(:list_status, filters, from)
+    initial_request = EventRequest.new(ctx, :list_status, filters, from)
 
     state = %__MODULE__{
       ctx: ctx,

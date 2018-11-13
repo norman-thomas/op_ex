@@ -92,13 +92,14 @@ defmodule OpenPublishing.HTTP.Request do
 
   def add_auth(%Request{} = request, %Context{auth: %AuthContext{access_token: access_token}} = ctx)
       when is_binary(access_token) do
-    %Context{auth: %AuthContext{auth_token: auth_token}} = OpenPublishing.Auth.auth(ctx)
+    {:ok, %Context{auth: %AuthContext{auth_token: auth_token}}} = OpenPublishing.Auth.auth(ctx)
     add_header(request, Authorization: "Bearer #{to_string(auth_token)}")
   end
 
   @doc """
   Tries to get the response body from a performed request.
   """
+  @spec get_response(HTTPoison.response()) :: {:ok, String.t()} | {:error, term()}
   def get_response(%HTTPoison.Response{status_code: 200, body: body}) do
     {:ok, body}
   end

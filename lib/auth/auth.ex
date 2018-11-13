@@ -19,7 +19,7 @@ defmodule OpenPublishing.Auth do
   @doc """
   Authenticate via `access_token` or `auth_token`.
   """
-  @spec auth(Context.t()) :: Context.t()
+  @spec auth(Context.t()) :: {:ok, Context.t()} | {:error, term()}
   def auth(%Context{auth: %AuthContext{auth_token: nil, access_token: access_token}} = ctx)
       when is_binary(access_token) do
     Logger.debug(fn ->
@@ -31,7 +31,7 @@ defmodule OpenPublishing.Auth do
       type: "api_key"
     ]
 
-    {:ok, %{"ok" => "ok", "auth_token" => bearer}} =
+    result =
       ctx.host
       |> Request.build_url(@auth_path, params)
       |> Request.get()
@@ -39,8 +39,14 @@ defmodule OpenPublishing.Auth do
       ~>> Request.get_response()
       ~>> Poison.decode()
 
-    ctx = %Context{ctx | auth: %AuthContext{ctx.auth | auth_token: bearer}}
-    verify(ctx)
+    case result do
+      {:ok, %{"ok" => "ok", "auth_token" => bearer}} ->
+        %Context{ctx | auth: %AuthContext{ctx.auth | auth_token: bearer}} |> verify()
+
+      {:error, reason} ->
+        Logger.error("Authentication failed: #{inspect(reason)}")
+        result
+    end
   end
 
   def auth(%Context{auth: %AuthContext{auth_token: auth_token}} = ctx)
@@ -48,12 +54,12 @@ defmodule OpenPublishing.Auth do
     verify(ctx)
   end
 
-  @spec verify(Context.t()) :: Context.t()
+  @spec verify(Context.t()) :: {:ok, Context.t()} | {:error, term()}
   def verify(%Context{auth: %AuthContext{auth_token: auth_token}} = ctx)
       when is_binary(auth_token) do
     Logger.debug(fn -> "Checking auth_token #{String.slice(auth_token, 0, 10)}" end)
 
-    {:ok, me} =
+    result =
       ctx
       |> whoami()
       |> Request.dispatch()
@@ -63,9 +69,13 @@ defmodule OpenPublishing.Auth do
       ~> Map.take(["realm_id", "user_id", "app_id"])
       ~> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
 
-    auth_context = Map.merge(ctx.auth, me)
+    case result do
+      {:ok, me} ->
+        {:ok, %Context{ctx | auth: Map.merge(ctx.auth, me)}}
 
-    %Context{ctx | auth: auth_context}
+      _ ->
+        result
+    end
   end
 
   @spec auth_header(keyword(), AuthContext.t()) :: keyword()
