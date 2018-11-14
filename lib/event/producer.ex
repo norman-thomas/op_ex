@@ -19,7 +19,7 @@ defmodule OpenPublishing.Event.Producer do
               response: nil
   end
 
-  def start_link(ctx, filters, from, name \\ __MODULE__)
+  def start_link({ctx, filters, from, name})
       when is_integer(from) and is_atom(name) do
     GenStage.start_link(__MODULE__, {ctx, filters, from}, name: name)
   end
@@ -53,23 +53,26 @@ defmodule OpenPublishing.Event.Producer do
   end
 
   defp fetch_and_reply(demand, {data, state}) do
+    state = add_demand(state, demand)
+
     {fetched_data, new_state} = fetch_events(state)
     Logger.debug("fetch_and_reply: retrieved #{length(fetched_data)} events")
 
     data = Enum.concat(data, fetched_data)
     {events, new_data} = Enum.split(data, state.demand)
 
-    new_state = update_demand(new_state, demand, events)
+    new_state = add_demand(new_state, -length(events))
+
     if new_state.demand > 0 do
-      Logger.info("No new events, fetching again in #{div(@interval, 1000)} sec")
+      Logger.debug("No new events, fetching again in #{div(@interval, 1000)} sec")
       Process.send_after(self(), :refresh, @interval)
     end
 
     {:noreply, events, {new_data, new_state}}
   end
 
-  defp update_demand(state, demand, events) do
-    buffered_demand = state.demand + demand - length(events)
+  defp add_demand(state, demand) do
+    buffered_demand = state.demand + demand
     %State{state | demand: buffered_demand}
   end
 
@@ -91,14 +94,18 @@ defmodule OpenPublishing.Event.Producer do
     process_event_response(state, resp)
   end
 
-  defp process_event_response(state, %EventResponse{items: [], execution_timestamp: from} = resp) do
-    new_state = %State{state | response: resp, from: from}
-    {[], new_state}
-  end
-
-  defp process_event_response(state, %EventResponse{items: data} = resp) do
+  defp process_event_response(%State{demand: demand} = state, %EventResponse{items: data} = resp)
+       when demand <= length(data) do
     new_from = data |> Enum.map(fn e -> e.last_modified end) |> Enum.max()
     new_state = %State{state | response: resp, from: new_from}
+    {data, new_state}
+  end
+
+  defp process_event_response(
+         %State{demand: demand} = state,
+         %EventResponse{items: data, execution_timestamp: from} = resp
+       ) do
+    new_state = %State{state | response: resp, from: from}
     {data, new_state}
   end
 end

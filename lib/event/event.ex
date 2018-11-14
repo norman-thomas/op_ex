@@ -42,25 +42,53 @@ defmodule OpenPublishing.Event do
     |> request()
   end
 
-  @spec request(EventRequest.t()) :: EventResponse.t()
-  def request(req) do
-    {:ok, %{"result" => response}} =
+  @spec request(EventRequest.t(), non_neg_integer()) :: EventResponse.t()
+  def request(req, retries \\ 3)
+
+  def request(req, retries) when retries > 0 do
+    result =
       req
       |> EventRequest.request()
       |> Request.dispatch()
       ~>> Request.get_response()
       ~>> Request.parse_json()
 
+    case process_response(req, result) do
+      {:ok, response} ->
+        response
+
+      response ->
+        cond do
+          retries > 0 ->
+            Logger.debug("retrying...")
+            :timer.sleep(@retries * 2_000)
+            request(req, retries - 1)
+
+          true ->
+            response
+        end
+    end
+  end
+
+  # def request(_req, _retries), do: {:error, :max_retries_reached}
+
+  defp process_response(req, {:ok, %{"result" => response}}) do
     %{"items" => items, "execution_timestamp" => execution_timestamp} = response
     items = items |> Enum.map(&from_gjp/1)
     next_request = get_next_request(req, response)
 
-    %EventResponse{
-      prev_request: req,
-      next_request: next_request,
-      execution_timestamp: execution_timestamp,
-      items: items
-    }
+    {:ok,
+     %EventResponse{
+       prev_request: req,
+       next_request: next_request,
+       execution_timestamp: execution_timestamp,
+       items: items
+     }}
+  end
+
+  defp process_response(_req, {:error, reason} = resp) do
+    Logger.error("Error while fetching events: #{inspect(reason)}")
+    resp
   end
 
   defp get_next_request(req, %{"resumption_token" => token, "execution_timestamp" => execution_timestamp})

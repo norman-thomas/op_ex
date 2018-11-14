@@ -10,8 +10,8 @@ defmodule OpenPublishing.Event.Loader do
               aspects: %{}
   end
 
-  def start_link(ctx, aspects) when is_list(aspects) do
-    GenStage.start_link(__MODULE__, {ctx, aspects}, name: __MODULE__)
+  def start_link({ctx, aspects, name}) when is_list(aspects) do
+    GenStage.start_link(__MODULE__, {ctx, aspects}, name: name)
   end
 
   def init({ctx, aspects}) do

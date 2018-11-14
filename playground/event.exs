@@ -9,10 +9,11 @@ access_token = System.get_env("ACCESS_TOKEN")
 
 filters = [OpenPublishing.Event.Filter.document_metadata_changed()]
 # from = 0
-from = DateTime.utc_now |> DateTime.to_unix
+# month = 30 * 24 * 60 * 60
+from = (DateTime.utc_now |> DateTime.to_unix)
 
-{:ok, prod} = OpenPublishing.Event.Producer.start_link(ctx, filters, from)
-{:ok, loader} = OpenPublishing.Event.Loader.start_link(ctx, [":basic"])
+{:ok, prod} = OpenPublishing.Event.Producer.start_link({ctx, filters, from, :producer})
+{:ok, loader} = OpenPublishing.Event.Loader.start_link({ctx, [":basic"], :loader})
 {:ok, consumer} = OpenPublishing.Event.Consumer.start_link()
 
 GenStage.sync_subscribe(consumer, to: loader)

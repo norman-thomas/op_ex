@@ -29,4 +29,4 @@ use Mix.Config
 #
 #     import_config "#{Mix.env()}.exs"
 
-config :op_ex, refresh_interval: 60_000
+config :op_ex, refresh_interval: 30_000
