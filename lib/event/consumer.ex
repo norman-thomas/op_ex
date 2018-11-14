@@ -2,12 +2,12 @@ defmodule OpenPublishing.Event.Consumer do
   use GenStage
   require Logger
 
-  def start_link() do
-    GenStage.start_link(__MODULE__, :ok, name: __MODULE__)
+  def start_link(subscribe_to) do
+    GenStage.start_link(__MODULE__, subscribe_to, name: __MODULE__)
   end
 
-  def init(:ok) do
-    {:consumer, :nothing}
+  def init(subscribe_to) do
+    {:consumer, :nothing, subscribe_to: [subscribe_to]}
   end
 
   def handle_events(events, _from, state) do

@@ -10,17 +10,17 @@ defmodule OpenPublishing.Event.Loader do
               aspects: %{}
   end
 
-  def start_link({ctx, aspects, name}) when is_list(aspects) do
-    GenStage.start_link(__MODULE__, {ctx, aspects}, name: name)
+  def start_link({ctx, aspects, name, subscribe_to}) when is_list(aspects) do
+    GenStage.start_link(__MODULE__, {ctx, aspects, subscribe_to}, name: name)
   end
 
-  def init({ctx, aspects}) do
+  def init({ctx, aspects, subscribe_to}) do
     state = %State{
       ctx: ctx,
       aspects: aspects
     }
 
-    {:producer_consumer, state}
+    {:producer_consumer, state, subscribe_to: [subscribe_to]}
   end
 
   def handle_events(events, _from, %State{ctx: ctx, aspects: aspects} = state) do

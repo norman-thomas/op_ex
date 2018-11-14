@@ -13,8 +13,8 @@ filters = [OpenPublishing.Event.Filter.document_metadata_changed()]
 from = (DateTime.utc_now |> DateTime.to_unix)
 
 {:ok, prod} = OpenPublishing.Event.Producer.start_link({ctx, filters, from, :producer})
-{:ok, loader} = OpenPublishing.Event.Loader.start_link({ctx, [":basic"], :loader})
-{:ok, consumer} = OpenPublishing.Event.Consumer.start_link()
+{:ok, loader} = OpenPublishing.Event.Loader.start_link({ctx, [":basic"], :loader, :producer})
+{:ok, consumer} = OpenPublishing.Event.Consumer.start_link(:loader)
 
-GenStage.sync_subscribe(consumer, to: loader)
-GenStage.sync_subscribe(loader, to: prod)
+#GenStage.sync_subscribe(consumer, to: loader)
+#GenStage.sync_subscribe(loader, to: prod)
