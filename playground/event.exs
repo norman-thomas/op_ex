@@ -8,8 +8,10 @@ access_token = System.get_env("ACCESS_TOKEN")
 
 
 filters = [OpenPublishing.Event.Filter.document_metadata_changed()]
+# from = 0
+from = DateTime.utc_now |> DateTime.to_unix
 
-{:ok, prod} = OpenPublishing.Event.Producer.start_link(ctx, filters, 0)
+{:ok, prod} = OpenPublishing.Event.Producer.start_link(ctx, filters, from)
 {:ok, loader} = OpenPublishing.Event.Loader.start_link(ctx, [":basic"])
 {:ok, consumer} = OpenPublishing.Event.Consumer.start_link()
 

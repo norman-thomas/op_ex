@@ -13,7 +13,7 @@ defmodule OpenPublishing.Event.Consumer do
   def handle_events(events, _from, state) do
     # TODO work with events, i.e. index, print, etc
 
-    Logger.debug("Consumer.handle_events:")
+    Logger.debug("Consumer.handle_events: got #{length(events)} events")
     Logger.debug(inspect(events))
 
     {:noreply, [], state}

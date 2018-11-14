@@ -24,8 +24,7 @@ defmodule OpenPublishing.Event.Loader do
   end
 
   def handle_events(events, _from, %State{ctx: ctx, aspects: aspects} = state) do
-    Logger.debug("Loader.handle_events:")
-    Logger.debug(inspect(events))
+    Logger.debug("Loader.handle_events: got #{length(events)} events")
 
     resources =
       events
@@ -33,7 +32,7 @@ defmodule OpenPublishing.Event.Loader do
       |> Resource.concat()
       |> Resource.add_fields(aspects)
 
-    Logger.debug("Loader: requesting #{Resource.uri(resources)}")
+    Logger.debug("Loader: requesting #{String.slice(Resource.uri(resources), 0, 100)}")
     {:ok, objects} = ResourceHelper.load(ctx, resources)
 
     {:noreply, objects, state}

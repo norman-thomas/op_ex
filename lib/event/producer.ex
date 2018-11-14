@@ -9,8 +9,11 @@ defmodule OpenPublishing.Event.Producer do
   alias OpenPublishing.Event.Response, as: EventResponse
   alias OpenPublishing.HTTP.Request, as: HTTPRequest
 
+  @interval Application.get_env(:op_ex, :refresh_interval, 15_000)
+
   defmodule State do
     defstruct ctx: nil,
+              demand: 0,
               filters: nil,
               from: 0,
               response: nil
@@ -42,16 +45,32 @@ defmodule OpenPublishing.Event.Producer do
   def handle_demand(demand, {data, state})
       when demand > 0 and demand > length(data) do
     Logger.debug("2 Got demand: #{demand}, length(data) is #{length(data)}")
+    fetch_and_reply(demand, {data, state})
+  end
+
+  def handle_info(:refresh, {data, state}) do
+    fetch_and_reply(0, {data, state})
+  end
+
+  defp fetch_and_reply(demand, {data, state}) do
     {fetched_data, new_state} = fetch_events(state)
+    Logger.debug("fetch_and_reply: retrieved #{length(fetched_data)} events")
+
     data = Enum.concat(data, fetched_data)
-    {events, new_data} = Enum.split(data, demand)
+    {events, new_data} = Enum.split(data, state.demand)
+
+    new_state = update_demand(new_state, demand, events)
+    if new_state.demand > 0 do
+      Logger.info("No new events, fetching again in #{div(@interval, 1000)} sec")
+      Process.send_after(self(), :refresh, @interval)
+    end
+
     {:noreply, events, {new_data, new_state}}
   end
 
-  def handle_demand(demand, {data, state}) when demand == 0 do
-    Logger.debug("3 Got demand: #{demand}, length(data) is #{length(data)}")
-    events = []
-    {:noreply, events, state}
+  defp update_demand(state, demand, events) do
+    buffered_demand = state.demand + demand - length(events)
+    %State{state | demand: buffered_demand}
   end
 
   defp fetch_events(%State{response: nil, ctx: ctx, filters: filters, from: from} = state) do
@@ -72,8 +91,12 @@ defmodule OpenPublishing.Event.Producer do
     process_event_response(state, resp)
   end
 
-  defp process_event_response(state, resp) do
-    data = resp.items
+  defp process_event_response(state, %EventResponse{items: [], execution_timestamp: from} = resp) do
+    new_state = %State{state | response: resp, from: from}
+    {[], new_state}
+  end
+
+  defp process_event_response(state, %EventResponse{items: data} = resp) do
     new_from = data |> Enum.map(fn e -> e.last_modified end) |> Enum.max()
     new_state = %State{state | response: resp, from: new_from}
     {data, new_state}
