@@ -9,7 +9,7 @@ defmodule OpenPublishing.Event.Producer do
   alias OpenPublishing.Event.Response, as: EventResponse
   alias OpenPublishing.HTTP.Request, as: HTTPRequest
 
-  @interval Application.get_env(:op_ex, :refresh_interval, 15_000)
+  @interval Application.get_env(:op_ex, :refresh_interval, 30_000)
 
   defmodule State do
     defstruct ctx: nil,

@@ -7,7 +7,7 @@ defmodule OpenPublishing.Event.Loader do
 
   defmodule State do
     defstruct ctx: nil,
-              aspects: %{}
+              aspects: []
   end
 
   def start_link({ctx, aspects, name, subscribe_to}) when is_list(aspects) do
