@@ -32,7 +32,7 @@ defmodule OpenPublishing.Resource do
   end
 
   def new(classname, ids) when is_list(ids) do
-    resources = for id <- ids, do: new(classname, id)
+    resources = for id <- ids, do: %Descriptor{classname: classname, id: id}
 
     %__MODULE__{resources: resources}
   end
@@ -124,5 +124,17 @@ defmodule OpenPublishing.Resource do
 
   def guid(classname, id) when is_binary(classname) and is_integer(id) and id >= 0 do
     "#{classname}.#{to_string(id)}"
+  end
+
+  def id_from_guid(guid) do
+    if is_guid?(guid) do
+      guid
+      |> String.split(".")
+      |> tl()
+      |> hd()
+      |> String.to_integer()
+    else
+      {:error, :malformed_guid}
+    end
   end
 end
