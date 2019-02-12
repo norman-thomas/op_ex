@@ -3,7 +3,7 @@ defmodule OpenPublishing.Context do
   Module which defines a struct to hold the context, i.e. host and authentication parameters
   """
 
-  @host "api.openpublishing.com"
+  @host Map.get(System.get_env(), "API_HOST", "api.openpublishing.com")
   defstruct host: @host,
             auth: %OpenPublishing.Auth.Context{},
             verify_ssl: true
